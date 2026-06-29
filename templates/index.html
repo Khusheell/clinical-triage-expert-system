@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>💊 Clinical Triage Expert System</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+  <style>
+    .comparison-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 24px;
+    }
+    .result-card-compare {
+        flex: 1; /* This makes them share space equally */
+        min-width: 300px; /* Ensures they wrap on small screens */
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        background: #fff;
+    }
+    .result-card-prolog {
+        border: 2px solid #0052cc; /* Blue for Prolog */
+    }
+    .result-card-ml {
+        border: 2px solid #ff8b00; /* Orange for ML */
+    }
+    .result-card-compare h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        font-size: 1.2rem;
+    }
+    .result-card-compare h2 {
+        font-size: 2.2em;
+        margin: 10px 0;
+    }
+    
+    /* --- NEW: Style for the Score Number --- */
+    .score-display {
+        font-size: 2.5em;
+        font-weight: 700;
+        color: #333;
+        margin: 10px 0;
+    }
+
+    /* Pill styles from your original card */
+    .pill {
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 1.8em;
+        font-weight: 800;
+        color: #fff;
+    }
+    .pill.emergency { background: #d90429; }
+    .pill.urgent { background: #f77f00; }
+    .pill.routine { background: #008000; }
+    .pill.unknown { background: #777; }
+
+    /* --- THIS IS THE CSS FIX --- */
+    /* We now use a "safe" class name 'na' */
+    .pill.na { 
+        background: #777; 
+        font-size: 1.2em; /* Make text smaller to fit */
+    }
+    .pill.error { background: #d90429; }
+    
+    /* Error message styling */
+    .messages {
+        padding: 15px;
+        background: #fff0f0;
+        border: 1px solid #d90429;
+        color: #d90429;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    .messages li { margin-left: 20px; }
+  </style>
+</head>
+<body>
+  <div class="page-bg"></div>
+  <div class="container">
+    <header class="hero">
+      <h1>⚕️ Clinical Triage Expert System ⚕️</h1>
+      <p class="subtitle">
+        Enter symptoms (comma separated) or use the checkboxes. 
+        Risk factors can be comma-separated text too.
+      </p>
+    </header>
+
+    <main class="card">
+      <form method="post" action="{{ url_for('run_diagnosis') }}">
+        <div class="form-row">
+          <label class="label">Symptoms (comma separated)</label>
+          <textarea name="symptoms_text" rows="2" placeholder="e.g., chest_pain, fever, cough"></textarea>
+          <small style="color:#2f5f3a;display:block;margin-top:6px">Or pick from the quick chips below:</small>
+          <div class="chips" style="margin-top:8px">
+            {% for s in symptoms %}
+              <label class="chip"><input type="checkbox" name="symptom" value="{{ s }}"> {{ s.replace('_',' ') }}</label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="label">Risk factors (comma separated)</label>
+          <input type="text" name="risks_text" placeholder="e.g., smoker, elderly" />
+          <div class="chips" style="margin-top:8px">
+            {% for r in risks %}
+              <label class="chip"><input type="checkbox" name="risk" value="{{ r }}"> {{ r }}</label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">🔍 Diagnose</button>
+          <a class="btn ghost" href="{{ url_for('add_entry') }}">➕ Add entry</a>
+          <a class="btn ghost" href="{{ url_for('stats_page') }}">📊 Stats</a>
+          <a class="btn ghost" href="{{ url_for('visualize') }}">📈 Visualize</a>
+          <a class="btn ghost" href="{{ url_for('astar') }}">🌟 Search</a>
+          <a class="btn ghost" href="{{ url_for('total_diseases_page') }}">🧮 Total Diseases</a>
+          <a class="btn ghost" href="{{ url_for('run_clustering') }}">🔬 Run Clustering</a>
+          <a class="btn ghost" href="{{ url_for('run_rl') }}">🤖 Run RL</a>
+        </div>
+      </form>
+    </main>
+    
+    {% if messages %}
+    <section class="card messages">
+        <strong>Warning:</strong>
+        <ul>
+        {% for msg in messages %}
+            <li>{{ msg }}</li>
+        {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if result %}
+    <section class="card">
+    
+      <h2>Comparison Results (Classification)</h2>
+      
+      <div class="comparison-container">
+          <div class="result-card-compare result-card-prolog">
+              <h3>🤖 Prolog Expert System</h3>
+              <span class="pill {{ result.level|lower }}">{{ result.level }}</span>
+              <div style="background:rgba(0,0,0,0.03);padding:12px;border-radius:8px; margin-top: 20px;">
+                <strong>Reason:</strong> {{ result.explanation }}<br>
+                <strong>Score breakdown:</strong>
+                <pre style="margin-top:8px;background:#fff;padding:10px;border-radius:8px; white-space: pre-wrap; word-break: break-all;">{{ result.breakdown }}</pre>
+              </div>
+          </div>
+
+          <div class="result-card-compare result-card-ml">
+              <h3>📈 Machine Learning Model</h3>
+              
+              {% set ml_display = ml_level if ml_level else 'N/A' %}
+              {% set ml_class = ml_display|lower %}
+              {% if 'n/a' in ml_class %}
+                {% set ml_class = 'na' %}
+              {% endif %}
+              <span class="pill {{ ml_class }}">{{ ml_display }}</span>
+              
+              <div style="background:rgba(0,0,0,0.03);padding:12px;border-radius:8px; margin-top: 20px;">
+                <strong>Reason:</strong> Model prediction based on trained data (<code>cases.csv</code>).
+                <br><br>
+                <strong>Note:</strong> This result will improve as more cases are logged and the model is retrained.
+              </div>
+          </div>
+      </div>
+      
+      <h2 style="margin-top: 30px;">Comparison Results (Regression Score)</h2>
+      <div class="comparison-container">
+          
+          <div class="result-card-compare result-card-prolog">
+              <h3>🤖 Prolog Expert System</h3>
+              <div class="score-display">{{ result.score }}</div>
+              <div style="background:rgba(0,0,0,0.03);padding:12px;border-radius:8px;">
+                <strong>Source:</strong> Score calculated from <code>calculate_score/4</code> rule in <code>triage_kb.pl</code>.
+              </div>
+          </div>
+          
+          <div class="result-card-compare result-card-ml">
+              <h3>📈 Machine Learning Model</h3>
+              <div class="score-display">{{ ml_score }}</div>
+              <div style="background:rgba(0,0,0,0.03);padding:12px;border-radius:8px;">
+                <strong>Source:</strong> Score *predicted* by <code>LinearRegression</code> model trained on <code>cases.csv</code>.
+              </div>
+          </div>
+      </div>
+      <div style="margin-top:24px;padding:14px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.05);
+                  background:#f9f9ff;color:#333;font-weight:500;">
+        <strong>Advice based on Prolog Result:</strong> {{ result.tips }}
+      </div>
+      
+    </section>
+    {% endif %}
+    <footer class="footer">
+      <p style="margin-top:18px">
+        © AI Lab — Clinical Triage Expert System (Prolog + A*/AO*)
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

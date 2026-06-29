@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Add Entry</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar"><div class="wrap"><h1>Add Entry</h1></div></header>
+  <main class="wrap">
+    <section class="card">
+      <form method="post">
+        <label>Patient / Entity name</label>
+        <input type="text" name="patient" placeholder="ID or name">
+        <label>Symptom</label>
+        <input type="text" name="symptom_text" placeholder="e.g., chest_pain">
+        <label>Disease / Note</label>
+        <input type="text" name="disease_text" placeholder="notes">
+        <label>Treatment</label>
+        <textarea name="treatment_text"></textarea>
+        <div style="margin-top:12px">
+          <button class="btn" type="submit">Add</button>
+          <a class="btn ghost" href="{{ url_for('index') }}">Back</a>
+        </div>
+        {% if message %}
+          <p class="notice">{{ message }}</p>
+        {% endif %}
+      </form>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>🤖 RL Triage Policy Results</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container { max-width: 900px; }
+    .card { margin-top: 20px; }
+    
+    .messages {
+        padding: 15px;
+        background: #e6f7ff;
+        border: 1px solid #b3e0ff;
+        color: #0056b3;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+    .messages li { list-style-type: none; margin-left: -20px; }
+
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 0.95em;
+    }
+    .stats-table th, .stats-table td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: left;
+    }
+    .stats-table th {
+        background-color: #f9f9f9;
+        font-weight: 600;
+    }
+    .stats-table tr:nth-child(even) {
+        background-color: #fdfdfd;
+    }
+    .stats-table td:first-child, .stats-table th:first-child {
+        font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bg"></div>
+  
+  <div class="container">
+    <header class="hero">
+      <h1>🤖 RL Triage Policy Optimizer</h1>
+      <p class="subtitle">
+        A Q-Learning agent was trained to find the best "action" (disposition) for each "state" (triage level).
+      </p>
+    </header>
+
+    {% if messages %}
+    <section class="card messages">
+        <ul>
+        {% for msg in messages %}
+            <li>{{ msg }}</li>
+        {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <main class="card">
+      <h2>Learned Optimal Policy</h2>
+      <p>This is the final "policy" the agent learned. It shows the action with the highest Q-value from the table above.</p>
+      
+      <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Patient State (Triage Level)</th>
+                <th>Optimal Action (Learned by RL)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in policy_list %}
+            <tr>
+                <td><strong>{{ item.state }}</strong></td>
+                <td>{{ item.action }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+      </table>
+    </main>
+
+    <main class="card">
+       <h2>Q-Table (Before Training)</h2>
+        <p>This is the agent's "brain" at 0 episodes. All values are 0, so it has no preferences and must guess randomly.</p>
+        
+        {{ q_table_before_html | safe }}
+    </main>
+    
+    <main class="card">
+        
+         <h2>Q-Table (After Training)</h2>
+        <p>This is the agent's "brain" after 10,000 episodes. It has learned the "value" of each action. Notice the high positive values for correct actions and high negative values for bad mistakes.</p>
+        
+        {{ q_table_after_html | safe }}
+    </main>
+
+    <footer class="footer">
+        <a class="btn primary" href="{{ url_for('index') }}" style="margin-right: auto;">⬅️ Back to Diagnosis</a>
+        <p style="margin-top:18px">
+          © AI Lab
+        </p>
+    </footer>
+  </div>
+</body>
+</html>

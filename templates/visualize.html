@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Visualize Cases</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* visualization page specific tweaks */
+    body {
+      background: linear-gradient(160deg, var(--bg-a), var(--bg-b) 40%, var(--bg-c) 80%);
+      color: var(--primary-navy-dark);
+    }
+    .viz-container {
+      max-width: 640px;             /* cap width */
+      margin: 50px auto;
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: 0 8px 28px var(--shadow);
+      border: 1px solid var(--card-border);
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: var(--primary-navy);
+      font-weight: 800;
+    }
+    h3 {
+      text-align: left;
+      margin-bottom: 10px;
+      color: var(--primary-navy-dark);
+    }
+    #casesChart {
+      display: block;
+      margin: 0 auto;
+      max-width: 420px;             /* smaller, centered chart */
+      max-height: 420px;
+    }
+    .btn-back {
+      margin-top: 18px;
+      display: inline-block;
+      text-decoration: none;
+      background: linear-gradient(180deg, var(--primary-navy), var(--primary-navy-dark));
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 6px 20px rgba(11,61,145,0.14);
+    }
+    .btn-back:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(11,61,145,0.18);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="viz-container">
+    <h1>Visualize Cases</h1>
+    <h3>Case Level Distribution</h3>
+
+    <canvas id="casesChart"></canvas>
+
+    <!-- Server data -->
+    <script id="server-data" type="application/json">
+      {{ counts|tojson | safe }}
+    </script>
+
+    <!-- Chart logic -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        let serverCounts = {};
+        try {
+          const raw = document.getElementById('server-data').textContent.trim();
+          serverCounts = raw ? JSON.parse(raw) : {};
+        } catch (err) {
+          console.warn("Could not parse server counts JSON:", err);
+          serverCounts = {};
+        }
+
+        const labels = Object.keys(serverCounts);
+        const dataValues = labels.map(k => serverCounts[k] || 0);
+
+        if (labels.length === 0 || dataValues.reduce((a,b)=>a+b,0)===0) {
+          const msg = document.createElement("div");
+          msg.style.marginTop = "16px";
+          msg.style.background = "#fff7e6";
+          msg.style.padding = "12px";
+          msg.style.borderRadius = "8px";
+          msg.style.color = "#333";
+          msg.textContent = "No case data available yet — run a few diagnoses to populate the chart.";
+          document.querySelector(".viz-container").appendChild(msg);
+          return;
+        }
+
+        const ctx = document.getElementById("casesChart").getContext("2d");
+        new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: labels,
+            datasets: [{
+              data: dataValues,
+              backgroundColor: [
+                "#0b3d91", /* navy */
+                "#5a7bd0", /* indigo */
+                "#8da9e4", /* light indigo */
+                "#b0b8c3"  /* grey */
+              ],
+              borderColor: "#ffffff",
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { color: "#0b3d91", font: { size: 14 } }
+              }
+            },
+            layout: {
+              padding: { top: 10, bottom: 10 }
+            }
+          }
+        });
+      });
+    </script>
+
+    <a class="btn-back" href="{{ url_for('index') }}">← Back</a>
+  </div>
+</body>
+</html>

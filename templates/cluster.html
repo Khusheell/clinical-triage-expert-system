@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>🔬 Clustering Analysis Results</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* We'll keep the table styles, but remove the body background */
+    .container { max-width: 900px; }
+    .card { margin-top: 20px; }
+    
+    /* Style for the tables */
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 0.95em;
+    }
+    .stats-table th, .stats-table td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: left;
+    }
+    .stats-table th {
+        background-color: #f9f9f9;
+        font-weight: 600;
+    }
+    .stats-table tr:nth-child(even) {
+        background-color: #fdfdfd;
+    }
+    .stats-table td:first-child, .stats-table th:first-child {
+        font-weight: 600;
+        text-align: center;
+    }
+    .messages {
+        padding: 15px;
+        background: #e6f7ff;
+        border: 1px solid #b3e0ff;
+        color: #0056b3;
+        border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bg"></div>
+  
+  <div class="container">
+    <header class="hero">
+      <h1>🔬 Clustering Analysis Results</h1>
+      <p class="subtitle">
+        K-Means Clustering (k=4) run on all cases from <code>cases.csv</code>.
+      </p>
+    </header>
+
+    {% if messages %}
+    <section class="card messages">
+        <ul>
+        {% for msg in messages %}
+            <li>{{ msg }}</li>
+        {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <main class="card">
+      <h2>Top Features per Cluster</h2>
+      <p>This shows the most common symptoms/risks found in each cluster. This is the "ML vs. Prolog" comparison: do these auto-generated groups match the logical groups (like 'heart_attack') in your Prolog rules?</p>
+      
+      <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Cluster</th>
+                <th>Most Common Features (Top 6)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cluster in cluster_results %}
+            <tr>
+                <td><strong>{{ cluster.name }}</strong></td>
+                <td>{{ cluster.top_terms }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+      </table>
+    </main>
+    
+    <main class="card">
+        <h2>Clusters vs. Prolog Triage Level</h2>
+        <p>This table shows how the "unsupervised" clusters map to the "expert" triage levels you defined in Prolog. (e.g., "Is Cluster 1 mostly Emergency cases?")</p>
+        
+        {{ crosstab_html | safe }}
+    </main>
+
+    <footer class="footer">
+        <a class="btn primary" href="{{ url_for('index') }}" style="margin-right: auto;">⬅️ Back to Diagnosis</a>
+        <p style="margin-top:18px">
+          © AI Lab — Clinical Triage Expert System
+        </p>
+    </footer>
+  </div>
+</body>
+</html>

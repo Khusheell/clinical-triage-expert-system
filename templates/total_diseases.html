@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🩺 Total Diagnoses (Including Related Conditions)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      background: linear-gradient(145deg, #e8ebf9, #dde2f5, #d0d8f0);
+      color: #1f2a44;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px;
+    }
+
+    .container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 32px 40px;
+      max-width: 780px;
+      width: 100%;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    h1 {
+      text-align: center;
+      color: #1b2b69;
+      font-weight: 800;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    input[type="text"] {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      width: 60%;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    button {
+      padding: 12px 18px;
+      background: linear-gradient(180deg, #1b2b69, #14204d);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(27, 43, 105, 0.2);
+    }
+
+    .message {
+      background: #fff7e6;
+      color: #9c4502;
+      border-radius: 10px;
+      padding: 10px 14px;
+      border: 1px solid #ffcc80;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .result-summary {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 1.1rem;
+      color: #1b2b69;
+    }
+
+    .diagnosis-list {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .diagnosis-card {
+      background: #f6f8ff;
+      border: 1px solid rgba(27, 43, 105, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 14px rgba(27, 43, 105, 0.05);
+      transition: 0.2s;
+    }
+
+    .diagnosis-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 18px rgba(27, 43, 105, 0.1);
+    }
+
+    .diagnosis-card h3 {
+      color: #1b2b69;
+      margin-bottom: 6px;
+    }
+
+    .diagnosis-card p {
+      margin: 4px 0;
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .btn-back {
+      text-decoration: none;
+      background: transparent;
+      border: 1px solid rgba(27, 43, 105, 0.3);
+      color: #1b2b69;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .btn-back:hover {
+      background: rgba(27, 43, 105, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🩺 Total Diagnoses (Including Related Conditions)</h1>
+
+    <form method="POST">
+      <input type="text" name="disease" placeholder="Enter condition or disease name (e.g., chest_pain)" required value="{{ disease }}">
+      <button type="submit">Calculate Total</button>
+    </form>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <p class="message">{{ msg }}</p>
+      {% endfor %}
+    {% endif %}
+
+    {% if total is not none %}
+      <p class="result-summary">
+        The condition <strong>{{ disease.title().replace('_',' ') }}</strong> has <strong>{{ total }}</strong> linked or related medical cases.
+      </p>
+    {% endif %}
+
+    {% if diagnosis_list %}
+      <div class="diagnosis-list">
+        {% for d in diagnosis_list %}
+          <div class="diagnosis-card">
+            <h3>{{ d.condition }}</h3>
+            <p><strong>Symptoms:</strong> {{ d.symptoms }}</p>
+            <p><strong>Severity:</strong> {{ d.severity }}</p>
+            <p><strong>Advice:</strong> {{ d.advice }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="actions">
+      <a class="btn-back" href="{{ url_for('index') }}">← Back to Diagnosis</a>
+    </div>
+  </div>
+</body>
+</html>
